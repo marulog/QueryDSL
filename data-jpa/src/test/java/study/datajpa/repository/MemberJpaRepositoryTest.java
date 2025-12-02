@@ -65,4 +65,16 @@ class MemberJpaRepositoryTest {
 
 
     }
+
+    @Test
+    void findByUsernameAndAgeGraterThen() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("AAA", 20);
+        memberJpaRepository.save(m1);
+        memberJpaRepository.save(m2);
+
+        List<Member> result = memberJpaRepository.findByUsernameAndAgeGraterThen(m1.getUsername(), m1.getAge());
+        assertThat(result.get(0).getUsername()).isEqualTo("AAA");
+        assertThat(result.get(0).getAge()).isEqualTo(20);
+    }
 }
