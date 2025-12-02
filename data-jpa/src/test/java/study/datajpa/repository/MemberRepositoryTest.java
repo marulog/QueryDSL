@@ -142,4 +142,22 @@ class MemberRepositoryTest {
             System.out.println("member = " + member);
         }
     }
+
+    @Test
+    void returnType() {
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+
+        Member findMember = memberRepository.findMemberByUsername("AAA");
+        System.out.println("findMember = " + findMember);
+
+        // List의 경우 못 찾아도 일단 반환됨(null)
+        // 다만 단건조회의 경우 NoResultException를 터트리지 않고 Spring Data Jpa가 감싸서 null로 반환홤
+        // 아~ 모르겠고 난 그냥 Optional 쓸래 ㅋㅋ 클라이언트가 알아서행 ㅎ
+        // 단건 조회에서 2개가 조회되면 예외 터짐
+        List<Member> nullList = memberRepository.findListByUsername("dlfjsdjds");
+        System.out.println("nullList = " + nullList.size());
+    }
 }
