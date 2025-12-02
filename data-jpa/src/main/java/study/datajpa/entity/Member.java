@@ -36,8 +36,6 @@ public class Member {
             changeTeam(team);
         }
 
-
-
     }
 
     public Member(String username) {
