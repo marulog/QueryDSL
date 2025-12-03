@@ -4,6 +4,10 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.datajpa.dto.MemberDto;
@@ -159,5 +163,76 @@ class MemberRepositoryTest {
         // 단건 조회에서 2개가 조회되면 예외 터짐
         List<Member> nullList = memberRepository.findListByUsername("dlfjsdjds");
         System.out.println("nullList = " + nullList.size());
+    }
+
+
+    //페이징, 정렬
+    @Test
+    public void paging(){
+        //given
+        memberRepository.save(new Member("member1",10));
+        memberRepository.save(new Member("member2",10));
+        memberRepository.save(new Member("member3",10));
+        memberRepository.save(new Member("member4",10));
+        memberRepository.save(new Member("member5",10));
+
+        // Spring Data JPA는 0페이지부터 시작
+        // 0번재 페이지에서 데이터 3개를 넣을거임
+        // 그러면 1번째 페이지에는 2개가 들어가겠지
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.Direction.DESC, "username");
+
+        //when -> count 쿼리 사용
+        Page<Member> page = memberRepository.findByAge(age, pageRequest);
+
+        // API 반환할 때는 DTO로 반환해서 사용
+        Page<MemberDto> toMap = page.map(member -> new MemberDto(member.getId(), member.getUsername(), null));
+
+
+
+        //then
+        // total 카운트를 jpa가 자동으로 날리는데 DB전체를 조회하기 때문에
+        // DB가 많은 경우 성능이 느려짐 -> 카운트 제외하는 쿼리 제공함
+        // List로 반환하면 count 쿼리 안함
+        List<Member> content = page.getContent();
+        long totalElements = page.getTotalElements();
+
+        assertThat(content.size()).isEqualTo(2);
+        assertThat(page.getTotalElements()).isEqualTo(5);
+        assertThat(page.getNumber()).isEqualTo(0);
+        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(page.isFirst()).isTrue();
+        assertThat(page.hasNext()).isTrue();
+    }
+
+    @Test
+    public void slice(){
+        //given
+        memberRepository.save(new Member("member1",10));
+        memberRepository.save(new Member("member2",10));
+        memberRepository.save(new Member("member3",10));
+        memberRepository.save(new Member("member4",10));
+        memberRepository.save(new Member("member5",10));
+
+        // Spring Data JPA는 0페이지부터 시작
+        // 0번재 페이지에서 데이터 3개를 넣을거임
+        // 그러면 1번째 페이지에는 2개가 들어가겠지
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.Direction.DESC, "username");
+
+        //when slice는 limit에 +1를 붙어서 N+1개를 가져옴
+        Slice<Member> page = memberRepository.findByAge(age, pageRequest);
+
+
+        //then
+        List<Member> content = page.getContent();
+//        long totalElements = page.getTotalElements();
+
+        assertThat(content.size()).isEqualTo(2);
+//        assertThat(page.getTotalElements()).isEqualTo(5);
+        assertThat(page.getNumber()).isEqualTo(0);
+//        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(page.isFirst()).isTrue();
+        assertThat(page.hasNext()).isTrue();
     }
 }
