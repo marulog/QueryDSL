@@ -1,5 +1,7 @@
 package study.datajpa.repository;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,7 @@ class MemberRepositoryTest {
 
     @Autowired MemberRepository memberRepository;
     @Autowired TeamRepository teamRepository;
+    @PersistenceContext EntityManager em;
 
     @Test
     public void save(){
@@ -234,5 +237,26 @@ class MemberRepositoryTest {
 //        assertThat(page.getTotalPages()).isEqualTo(2);
         assertThat(page.isFirst()).isTrue();
         assertThat(page.hasNext()).isTrue();
+    }
+
+    @Test
+    void bilkAgePlus() {
+        memberRepository.save(new Member("member1",10));
+        memberRepository.save(new Member("member2",10));
+        memberRepository.save(new Member("member3",20));
+        memberRepository.save(new Member("member4",21));
+        memberRepository.save(new Member("member5",40));
+
+        int resultCount = memberRepository.bilkAgePlus(20);
+
+        List<Member> result = memberRepository.findByUsername("member5");
+        Member member5 = result.get(0);
+        System.out.println("member5 = " + member5);
+        // 41이 아닌 40살로 저장되어있음
+        // 벌크 연산 이후에는 영속성 컨텍스트를 싹다 날려야됨
+        // 벌크 연산은 영속성 컨텍스트를 거치지 않고 DB에 바로 쿼리를 날림
+
+        assertThat(resultCount).isEqualTo(3);
+
     }
 }
