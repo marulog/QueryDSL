@@ -315,4 +315,39 @@ class MemberRepositoryTest {
             System.out.println("member.teamClass = " + member.getTeam().getClass());
         }
     }
+
+    @Test
+    public void queryHint(){
+        //given
+        Member member1 = new Member("member1", 10);
+        memberRepository.save(member1);
+        em.flush();
+        em.clear();
+
+        //when
+//        Member findMember = memberRepository.findById(member1.getId()).get();
+//        findMember.setUsername("member2");
+//
+//        em.flush(); // 이 시점에서 1차 캐시와 앤티티값을 비교하여 변경감지함
+//        // 1차 캐시에는 name = member1, 앤티니는 name = member2
+//        // 변경을 감지하고 DB로 update문 쏨
+//        // 다만, 비교를 하기 위해 스냅샷 => 2개의 객체를 따로 관리하는 단점
+        // -> JPA Hint 사용함, 스냅샷을 만들지 않음 -> 변경감지를 안함 -> update 쿼리 x
+        // 근데 요즘 기술이 좋아져서 성능차이는 그닥 없음, 진짜 트래픽이 많은 곳에만 적용 추천ㅇ
+        Member findMember = memberRepository.findReadonlyByUsername(member1.getUsername());
+        findMember.setUsername("member2");
+
+    }
+
+    @Test
+    public void lock(){
+        //given
+        Member member1 = new Member("member1", 10);
+        memberRepository.save(member1);
+        em.flush();
+        em.clear();
+
+        List<Member> result = memberRepository.findLockByUsername(member1.getUsername());
+
+    }
 }
