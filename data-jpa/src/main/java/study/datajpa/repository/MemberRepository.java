@@ -3,6 +3,7 @@ package study.datajpa.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -56,4 +57,26 @@ public interface MemberRepository  extends JpaRepository<Member, Long> {
     @Query("update Member m set m.age = m.age + 1 where m.age >= :age")
     int bilkAgePlus(@Param("age") int age);
 
+    // 멤버와 관련된 팀을 한번에 가져옴
+    @Query("select m from Member m left join fetch m.team")
+    List<Member> findMemberFetchJoin();
+
+
+    //엔티티 그래프
+    // fetch 전략을 쓰고 싶음 -> 근데 쓰려면 @Query에다가 jpql써야됨
+    // 아 귀찮은데 -> 앤티티 그래프
+    @Override
+    @EntityGraph(attributePaths = {"team"} )
+    List<Member> findAll();
+
+
+    // jpql쓰면서 fetch전략까지 근데 굳이 이거는.. 흠
+    @EntityGraph(attributePaths = {"team"} )
+    @Query("select m from Member m")
+    List<Member> findMemberEntityGraph();
+
+    // 근데 이거까지는 잘 사용하지 않음
+    @EntityGraph(attributePaths = {"team"} )
+//    @EntityGraph("Member.all") // 엔티티에서 fetch전략 정의 후 재활용
+    List<Member> findEntityGraphByUsername(@Param("username") String username);
 }

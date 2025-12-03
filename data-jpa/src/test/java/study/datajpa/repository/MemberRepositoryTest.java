@@ -259,4 +259,60 @@ class MemberRepositoryTest {
         assertThat(resultCount).isEqualTo(3);
 
     }
+
+    @Test
+    public void findMemberLazy(){
+        //given
+        //member1 -> teamA
+        //member2 -> teamB
+
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 10, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        em.flush();
+        em.clear();
+        List<Member> members = memberRepository.findAll();
+        // 지금 앤티티 그래프라서 자동 fetch join으로 가져옴
+
+        // team를 조회하지 않음 -> Lazy전략
+        // memmber.team.name -> 직접 조회 할 시 그 때 join하여 팀을 조회함
+        // 조회전까지는 프록시 객체이
+        for (Member member : members) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("member.teamClass = " + member.getTeam().getClass());
+            System.out.println("member.team = " + member.getTeam().getName());
+            System.out.println("member.teamClass = " + member.getTeam().getClass());
+        }
+    }
+
+    @Test
+    void findMemberFetchJoin() {
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 10, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        em.flush();
+        em.clear();
+        // fetch join 전략으로 변경
+        // 이 경우 team은 프록시 객체가 아닌 진짜 객체를 조회해서 저장
+        List<Member> members = memberRepository.findMemberFetchJoin();
+
+        for (Member member : members) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("member.teamClass = " + member.getTeam().getClass());
+            System.out.println("member.team = " + member.getTeam().getName());
+            System.out.println("member.teamClass = " + member.getTeam().getClass());
+        }
+    }
 }
