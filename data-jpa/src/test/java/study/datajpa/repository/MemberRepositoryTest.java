@@ -157,15 +157,18 @@ class MemberRepositoryTest {
         memberRepository.save(m1);
         memberRepository.save(m2);
 
-        Member findMember = memberRepository.findMemberByUsername("AAA");
-        System.out.println("findMember = " + findMember);
+//        // 단건 조회
+//        Member findMember = memberRepository.findMemberByUsername("CCC");
+//        System.out.println("findMember = " + findMember);
+//
+       // 단건 Optional 조회
+        Optional<Member> optionalMember = memberRepository.findOptionalByUsername("AAA");
+        System.out.println("optionalMember = " + optionalMember);
 
-        // List의 경우 못 찾아도 일단 반환됨(null)
-        // 다만 단건조회의 경우 NoResultException를 터트리지 않고 Spring Data Jpa가 감싸서 null로 반환홤
-        // 아~ 모르겠고 난 그냥 Optional 쓸래 ㅋㅋ 클라이언트가 알아서행 ㅎ
-        // 단건 조회에서 2개가 조회되면 예외 터짐
-        List<Member> nullList = memberRepository.findListByUsername("dlfjsdjds");
-        System.out.println("nullList = " + nullList.size());
+        // 리스트 조회
+//        List<Member> nullList = memberRepository.findListByUsername("dlfjsdjds");
+//        System.out.println("nullList.size() = " + nullList.size());
+//        System.out.println("nullList = " + nullList);
     }
 
 
@@ -180,13 +183,19 @@ class MemberRepositoryTest {
         memberRepository.save(new Member("member5",10));
 
         // Spring Data JPA는 0페이지부터 시작
-        // 0번재 페이지에서 데이터 3개를 넣을거임
+        // 0번재 페이지에서 데이터 3개를 넣을거임, 정렬은 유저이름으로 내림차순
         // 그러면 1번째 페이지에는 2개가 들어가겠지
         int age = 10;
         PageRequest pageRequest = PageRequest.of(0, 3, Sort.Direction.DESC, "username");
 
         //when -> count 쿼리 사용
+        // find -> select, ByAge -> where age = ? (10),
+        // page객체는 현재 페이지의 정보 + 전체 데이터의 개수를 가지는 객체임
         Page<Member> page = memberRepository.findByAge(age, pageRequest);
+        System.out.println("page = " + page);
+        for (Member member : page) {
+            System.out.println("[Page]member = " + member);
+        }
 
         // API 반환할 때는 DTO로 반환해서 사용
         Page<MemberDto> toMap = page.map(member -> new MemberDto(member.getId(), member.getUsername(), null));
@@ -195,19 +204,27 @@ class MemberRepositoryTest {
 
         //then
         // total 카운트를 jpa가 자동으로 날리는데 DB전체를 조회하기 때문에
+        // 왜 냐면 offset값을 가지고 미리 페이지를 나눠야됨
         // DB가 많은 경우 성능이 느려짐 -> 카운트 제외하는 쿼리 제공함
-        // List로 반환하면 count 쿼리 안함
-        List<Member> content = page.getContent();
+        // List로 반환하면 count 쿼리 안함 -> page로 반환시 page 처리를 위해 토탈 카운트 계산
+        List<Member> content = page.getContent(); // page -> List로 변환
+        System.out.println("content = " + content);
+        for (Member member : content) {
+            System.out.println("[List]member = " + member);
+        }
+
+
         long totalElements = page.getTotalElements();
 
-        assertThat(content.size()).isEqualTo(2);
+        assertThat(content.size()).isEqualTo(3); // 현제 페이지에 담긴 엔티티 개수
         assertThat(page.getTotalElements()).isEqualTo(5);
-        assertThat(page.getNumber()).isEqualTo(0);
-        assertThat(page.getTotalPages()).isEqualTo(2);
-        assertThat(page.isFirst()).isTrue();
+        assertThat(page.getNumber()).isEqualTo(0); // 0번째 페이지임?
+        assertThat(page.getTotalPages()).isEqualTo(2); // 페이지 전체 개수
+        assertThat(page.isLast()).isFalse();
         assertThat(page.hasNext()).isTrue();
     }
 
+    // 슬라이스
     @Test
     public void slice(){
         //given
@@ -219,7 +236,7 @@ class MemberRepositoryTest {
 
         // Spring Data JPA는 0페이지부터 시작
         // 0번재 페이지에서 데이터 3개를 넣을거임
-        // 그러면 1번째 페이지에는 2개가 들어가겠지
+        // 그러면 1번째 페이지에는 5-3 = 2개가 들어가겠지
         int age = 10;
         PageRequest pageRequest = PageRequest.of(0, 3, Sort.Direction.DESC, "username");
 
@@ -229,12 +246,8 @@ class MemberRepositoryTest {
 
         //then
         List<Member> content = page.getContent();
-//        long totalElements = page.getTotalElements();
-
         assertThat(content.size()).isEqualTo(2);
-//        assertThat(page.getTotalElements()).isEqualTo(5);
         assertThat(page.getNumber()).isEqualTo(0);
-//        assertThat(page.getTotalPages()).isEqualTo(2);
         assertThat(page.isFirst()).isTrue();
         assertThat(page.hasNext()).isTrue();
     }
@@ -247,7 +260,7 @@ class MemberRepositoryTest {
         memberRepository.save(new Member("member4",21));
         memberRepository.save(new Member("member5",40));
 
-        int resultCount = memberRepository.bilkAgePlus(20);
+        int resultCount = memberRepository.bilkAgePlus(20); // 3으로 예상
 
         List<Member> result = memberRepository.findByUsername("member5");
         Member member5 = result.get(0);
@@ -290,6 +303,8 @@ class MemberRepositoryTest {
             System.out.println("member.teamClass = " + member.getTeam().getClass());
         }
     }
+
+
 
     @Test
     void findMemberFetchJoin() {
