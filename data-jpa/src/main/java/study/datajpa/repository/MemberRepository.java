@@ -13,7 +13,7 @@ import study.datajpa.entity.Member;
 import java.util.List;
 import java.util.Optional;
 
-public interface MemberRepository  extends JpaRepository<Member, Long> {
+public interface MemberRepository  extends JpaRepository<Member, Long>, MemberRepositoryCustom {
 
     // 1. 메소드 쿼리
     // 자동으로 sql 작성해주는데 너무 길다~ ->
