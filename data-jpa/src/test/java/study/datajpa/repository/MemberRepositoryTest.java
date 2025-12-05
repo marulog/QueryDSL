@@ -370,4 +370,42 @@ class MemberRepositoryTest {
     public void callCustom(){
         List<Member> result = memberRepository.findMemberCustom();
     }
+
+    @Test
+    public void projections(){
+
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 10, teamA);
+        em.persist(member2);
+        em.persist(member1);
+
+        em.flush();
+        em.clear();
+
+        List<UsernameOnly> result = memberRepository.findProjectionsByUsername("m1");
+        for (UsernameOnly usernameOnly : result) {
+            System.out.println("usernameOnly = " + usernameOnly);
+        }
+    }
+
+    @Test
+    public void nativeQuery(){
+    Team teamA = new Team("teamA");
+    em.persist(teamA);
+
+    Member member1 = new Member("member1", 10, teamA);
+    Member member2 = new Member("member2", 10, teamA);
+    em.persist(member2);
+    em.persist(member1);
+
+    em.flush();
+    em.clear();
+
+        Member result = memberRepository.findByNativeQuery("member1");
+        System.out.println("result = " + result);
+    }
+
 }
